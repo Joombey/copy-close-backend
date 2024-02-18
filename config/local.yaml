@@ -1,0 +1,8 @@
+db:
+  driver: mysql
+  user_name: root
+  password: root
+  address: profile-db:3306
+  authority: tcp
+  db_name: db
+  path: "root:root@tcp(profile-db:3306)/db"
