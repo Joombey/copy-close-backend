@@ -7,6 +7,10 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+type fileConfig struct {
+	Db *DbConfig `yaml:"db"`
+}
+
 type DbConfig struct {
 	Driver   string `yaml:"driver"`
 	UserName string `yaml:"user_name"`
@@ -16,16 +20,19 @@ type DbConfig struct {
 	DbName   string `yaml:"db_name"`
 }
 
-func (cfg DbConfig) DSN() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", cfg.UserName, cfg.Password, cfg.Address, cfg.Port, cfg.DbName)
-}
+var cfg = fileConfig{}
 
-func New() (cfg DbConfig, err error) {
+func init() {
 	cfgPath, present := os.LookupEnv("COPY_CLOSE_CONFIG")
 	if !present {
-		cfgPath = "local.yaml"
+		path, _ := os.Getwd()
+		cfgPath = fmt.Sprintf("%s/config/default.yaml", path)
 	}
 
-	err = cleanenv.ReadConfig(cfgPath, &cfg)
-	return
+	cleanenv.ReadConfig(cfgPath, &cfg)
+}
+
+func GetDSN() string {
+	db := cfg.Db
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", db.UserName, db.Password, db.Address, db.Port, db.DbName)
 }

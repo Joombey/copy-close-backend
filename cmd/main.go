@@ -1,10 +1,9 @@
 package main
 
 import (
-	"dev.farukh/copy-close/di"
+	"dev.farukh/copy-close/http"
 )
 
 func main() {
-	di.New()
-	config.New()
+	http.Init()
 }

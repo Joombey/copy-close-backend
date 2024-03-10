@@ -1,16 +1,12 @@
 package http
 
 import (
-	"net/http"
+	"dev.farukh/copy-close/http/handlers"
 	"github.com/gin-gonic/gin"
-	"github.com/satori/go.uuid"
 )
 
 func Init() {
-	router :=gin.Default()
-	router.GET("/123", )
+	router := gin.Default()
+	handlers.GroupAuthRequests(router.Group("/auth"))
 	router.Run()
-
-	uuid1 := uuid.NewV4()
-	uuid.Equal()
 }

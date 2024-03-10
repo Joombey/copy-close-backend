@@ -1,23 +1,19 @@
-package models
+package db_models
 
 import (
+	core "dev.farukh/copy-close/models/core_models"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	Base
+	CopyCloseBase
 	FirstName  string
 	SecondName string
+	Login      string
 	Password   string
-	RoleID     uint32 `gorm:"foreignkey:role_id"`
-	Location
-}
-
-type Location struct {
-	Address string
-	Lat     float32
-	Lon     float32
+	RoleID     uint
+	core.Address
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
