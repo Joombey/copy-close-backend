@@ -28,6 +28,7 @@ var adminRole = dbModels.Role{
 
 type UserRepo interface {
 	CreateUser(api.SignUpRequest) error
+	SignIn(api.SignInRequest) error
 }
 
 type UserRepoImpl struct {
@@ -60,6 +61,20 @@ func (repo UserRepoImpl) CreateUser(signUp api.SignUpRequest) error {
 	} else {
 		return errs.ErrUserExists
 	}
+}
+
+func (repo UserRepoImpl) SignIn(signIn api.SignInRequest) (err error) {
+	var exists bool
+	err = repo.db.Raw(
+		"SELECT EXISTS(SELECT * FROM users WHERE login = ? AND password = ?)",
+		signIn.Login,
+		signIn.Password,
+	).Scan(&exists).Error
+
+	if !exists {
+		return errs.ErrInvalidLoginOrPassword
+	}
+	return
 }
 
 func New(dsn string) (*UserRepoImpl, error) {

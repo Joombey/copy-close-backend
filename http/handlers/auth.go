@@ -35,4 +35,14 @@ func signUpHandler(c *gin.Context) {
 }
 
 func signInHandler(c *gin.Context) {
+	var request api.SignInRequest
+	c.BindJSON(&request)
+	err := repo.SignIn(request)
+	if errors.Is(err, errs.ErrInvalidLoginOrPassword) {
+		c.JSON(http.StatusUnauthorized, err.Error())
+	} else if err!= nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		c.JSON(http.StatusOK, "authorization is successful")
+	}
 }

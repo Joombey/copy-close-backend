@@ -12,3 +12,8 @@ type SignUpRequest struct {
 	Password   string       `json:"password" binding:"required"`
 	IsSeller   *bool        `json:"is_seller" binding:"required"`
 }
+
+type SignInRequest struct {
+	Login string `json:"login" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
