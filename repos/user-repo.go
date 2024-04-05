@@ -2,8 +2,11 @@ package repos
 
 import (
 	api "dev.farukh/copy-close/models/api_models"
+	core "dev.farukh/copy-close/models/core_models"
 	dbModels "dev.farukh/copy-close/models/db_models"
 	errs "dev.farukh/copy-close/models/errs"
+	repoModels "dev.farukh/copy-close/models/repo_models"
+	uuid "github.com/satori/go.uuid"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -27,43 +30,38 @@ var adminRole = dbModels.Role{
 }
 
 type UserRepo interface {
-	CreateUser(api.SignUpRequest) error
-	SignIn(api.SignInRequest) error
+	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
+	LogInUser(api.LogInRequest) error
 }
 
 type UserRepoImpl struct {
 	db *gorm.DB
 }
 
-func (repo UserRepoImpl) CreateUser(signUp api.SignUpRequest) error {
-	user := &dbModels.User{
-		Login:      signUp.Login,
-		FirstName:  signUp.Name,
-		SecondName: signUp.SecondName,
-		Password:   signUp.Password,
-		Address:    signUp.Address,
-		RoleID: func() uint {
-			if signUp.IsSeller == boolPtr(true) {
-				return sellerRole.ID
-			} else {
-				return userRole.ID
-			}
-		}(),
-	}
-	var exists bool
-	repo.db.Raw("SELECT EXISTS(SELECT * FROM users WHERE login = ? and password = ?)", signUp.Login, signUp.Password).Scan(&exists)
-	if !exists {
-		err := repo.db.Create(user)
-		if err.Error != nil {
-			return err.Error
+func (repo UserRepoImpl) RegisterUser(registerData api.RegisterRequest) (repoModels.RegisterResult, error) {
+	if !repo.userExists(registerData.Login, registerData.Password) {
+		addressID := repo.createAddress(registerData.Address)
+		role := repo.getRole(registerData.IsSeller)
+
+		id, authToken, imageID, err := repo.createUser(registerData, role.ID, addressID)
+		if err != nil {
+			return repoModels.RegisterResult{}, err
 		}
-		return nil
+
+		result := repoModels.RegisterResult{
+			UserID:    id.String(),
+			AddressID: addressID.String(),
+			AuthToken: authToken.String(),
+			UserImage: imageID.String(),
+			Role:      role,
+		}
+		return result, nil
 	} else {
-		return errs.ErrUserExists
+		return repoModels.RegisterResult{}, errs.ErrUserExists
 	}
 }
 
-func (repo UserRepoImpl) SignIn(signIn api.SignInRequest) (err error) {
+func (repo UserRepoImpl) LogInUser(signIn api.LogInRequest) (err error) {
 	var exists bool
 	err = repo.db.Raw(
 		"SELECT EXISTS(SELECT * FROM users WHERE login = ? AND password = ?)",
@@ -75,6 +73,60 @@ func (repo UserRepoImpl) SignIn(signIn api.SignInRequest) (err error) {
 		return errs.ErrInvalidLoginOrPassword
 	}
 	return
+}
+
+func (repo UserRepoImpl) userExists(login, password string) bool {
+	var exists bool
+	repo.db.Raw(
+		"SELECT EXISTS(SELECT * FROM users WHERE login = ? and password = ?)",
+		login,
+		password,
+	).Scan(&exists)
+	return exists
+}
+
+func (repo UserRepoImpl) getRole(isSeller *bool) dbModels.Role {
+	if isSeller == boolPtr(true) {
+		return sellerRole
+	} else {
+		return userRole
+	}
+}
+
+func (repo UserRepoImpl) createUser(
+	registerData api.RegisterRequest,
+	roleID uint,
+	addressID uuid.UUID,
+) (uuid.UUID, uuid.UUID, uuid.UUID, error) {
+	imageID := uuid.NewV4()
+	authToken := uuid.NewV4()
+	user := &dbModels.User{
+		Login:     registerData.Login,
+		FirstName: registerData.Name,
+		Password:  registerData.Password,
+		AddressID: addressID,
+		RoleID:    roleID,
+		UserImage: imageID,
+		AuthToken: authToken,
+	}
+
+	err := repo.db.Create(user)
+	return user.ID, authToken, imageID, err.Error
+}
+
+func (repo UserRepoImpl) createAddress(addressCore core.Address) uuid.UUID {
+	address := &dbModels.Address{
+		AddressName: addressCore.Address,
+		Lat:         addressCore.Lat,
+		Lon:         addressCore.Lon,
+	}
+	repo.db.Create(&address)
+	return address.ID
+}
+
+func (repo *UserRepoImpl) ClearAll() {
+	repo.db.Exec("DELETE FROM users")
+	repo.db.Exec("DELETE FROM addresses")
 }
 
 func New(dsn string) (*UserRepoImpl, error) {
@@ -106,6 +158,7 @@ func openConnection(dsn string) (*gorm.DB, error) {
 func setupDb(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&dbModels.Role{},
+		&dbModels.Address{},
 		&dbModels.User{},
 	)
 }

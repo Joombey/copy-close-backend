@@ -1,19 +1,20 @@
 package db_models
 
 import (
-	core "dev.farukh/copy-close/models/core_models"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
 
 type User struct {
 	CopyCloseBase
-	FirstName  string
-	SecondName string
-	Login      string
-	Password   string
-	RoleID     uint
-	core.Address
+	FirstName string
+	Login     string
+	Password  string
+
+	RoleID    uint
+	UserImage uuid.UUID `gorm:"type:uuid"`
+	AddressID uuid.UUID `gorm:"type:uuid"`
+	AuthToken uuid.UUID `gorm:"type:uuid"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {

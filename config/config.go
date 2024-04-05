@@ -26,7 +26,7 @@ func init() {
 	cfgPath, present := os.LookupEnv("COPY_CLOSE_CONFIG")
 	if !present {
 		path, _ := os.Getwd()
-		cfgPath = fmt.Sprintf("%s/config/default.yaml", path)
+		cfgPath = fmt.Sprintf("%s/config/local.yaml", path)
 	}
 
 	cleanenv.ReadConfig(cfgPath, &cfg)
