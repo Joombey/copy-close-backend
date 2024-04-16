@@ -31,7 +31,8 @@ var adminRole = dbModels.Role{
 
 type UserRepo interface {
 	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
-	LogInUser(api.LogInRequest) error
+	LogInUser(api.LogInRequest) (uuid.UUID, error)
+	GetUser(login, authToken string) (repoModels.UserInfoResult, error)
 }
 
 type UserRepoImpl struct {
@@ -61,18 +62,43 @@ func (repo UserRepoImpl) RegisterUser(registerData api.RegisterRequest) (repoMod
 	}
 }
 
-func (repo UserRepoImpl) LogInUser(signIn api.LogInRequest) (err error) {
-	var exists bool
-	err = repo.db.Raw(
-		"SELECT EXISTS(SELECT * FROM users WHERE login = ? AND password = ?)",
-		signIn.Login,
-		signIn.Password,
-	).Scan(&exists).Error
-
-	if !exists {
-		return errs.ErrInvalidLoginOrPassword
+func (repo UserRepoImpl) LogInUser(signIn api.LogInRequest) (authToken uuid.UUID, err error) {
+	user := &dbModels.User{}
+	err = repo.db.Where("login = ? AND password = ?", signIn.Login, signIn.Password).First(user).Error
+	if err != nil {
+		return uuid.UUID{}, errs.ErrInvalidLoginOrPassword
 	}
-	return
+	return user.AuthToken, nil
+}
+
+func (repo UserRepoImpl) GetUser(login, authToken string) (repoModels.UserInfoResult, error) {
+	authTokenUUID, err := uuid.FromString(authToken)
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+
+	var user dbModels.User
+	err = repo.db.Where("login = ? AND auth_token = ?", login, authTokenUUID).First(&user).Error
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+
+	var role dbModels.Role
+	err = repo.db.Where("id = ?", user.RoleID).First(&role).Error
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+
+	var address dbModels.Address
+	err = repo.db.Where("id = ?", user.AddressID).First(&address).Error
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+	return repoModels.UserInfoResult{
+        User:    user,
+        Role:    role,
+        Address: address,
+    }, nil
 }
 
 func (repo UserRepoImpl) userExists(login, password string) bool {

@@ -6,3 +6,4 @@ db:
   port: 3306
   authority: tcp
   db_name: db
+  args: parseTime=true

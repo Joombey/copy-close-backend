@@ -7,9 +7,9 @@ import (
 
 type Address struct {
 	CopyCloseBase
-	AddressName string
-	Lat         float32
-	Lon         float32
+	AddressName string  `json:"address"`
+	Lat         float32 `json:"lat"`
+	Lon         float32 `json:"lon"`
 
 	Users []User
 }

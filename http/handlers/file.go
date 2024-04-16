@@ -9,12 +9,12 @@ import (
 )
 
 func GroupFileRequests(rg *gin.RouterGroup) {
-	rg.GET("/getfile/:filename", getFileHandler)
-
+	rg.GET("/image/:imageID", getFileHandler)
 }
 
 func getFileHandler(c *gin.Context) {
 	path, _ := os.Getwd()
-	path = fmt.Sprintf("%s/files/%s", path, c.Param("filename"))
+	path = fmt.Sprintf("%s/files/%s.jpeg", path, c.Param("imageID"))
+	println("blabla")
 	c.File(path)
 }

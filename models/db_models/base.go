@@ -7,6 +7,6 @@ import (
 )
 
 type CopyCloseBase struct {
-	ID        uuid.UUID `gorm:"primarykey;type:uuid"`
+	ID        uuid.UUID `gorm:"primarykey;type:uuid" json:"id,omitempty"`
 	CreatedAt time.Time
 }

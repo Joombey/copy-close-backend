@@ -9,3 +9,9 @@ type RegisterResult struct {
 	UserImage string        `json:"user_image"`
 	Role      dbModels.Role `json:"role"`
 }
+
+type UserInfoResult struct {
+	User    dbModels.User
+	Role    dbModels.Role
+	Address dbModels.Address
+}

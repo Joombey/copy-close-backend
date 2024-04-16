@@ -52,13 +52,13 @@ func registerHandler(c *gin.Context) {
 func logInHandler(c *gin.Context) {
 	var request api.LogInRequest
 	c.BindJSON(&request)
-	err := userRepo.LogInUser(request)
+	token, err := userRepo.LogInUser(request)
 	if errors.Is(err, errs.ErrInvalidLoginOrPassword) {
 		c.JSON(http.StatusUnauthorized, err.Error())
 	} else if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 	} else {
-		c.JSON(http.StatusOK, "authorization is successful")
+		c.String(http.StatusOK, token.String())
 	}
 }
 

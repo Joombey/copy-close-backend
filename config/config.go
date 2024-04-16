@@ -18,6 +18,7 @@ type DbConfig struct {
 	Address  string `yaml:"address"`
 	Port     int    `yaml:"port"`
 	DbName   string `yaml:"db_name"`
+	Args     string `yaml:"args"`
 }
 
 var cfg = fileConfig{}
@@ -34,5 +35,5 @@ func init() {
 
 func GetDSN() string {
 	db := cfg.Db
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", db.UserName, db.Password, db.Address, db.Port, db.DbName)
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?%s", db.UserName, db.Password, db.Address, db.Port, db.DbName, db.Args)
 }
