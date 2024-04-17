@@ -5,8 +5,8 @@ import (
 
 	"errors"
 
-	apimodels "dev.farukh/copy-close/models/api_models"
 	"dev.farukh/copy-close/models/errs"
+	utils "dev.farukh/copy-close/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,16 +36,5 @@ func getUserInfoHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		http.StatusOK,
-		apimodels.UserInfoResponse{
-			UserID:    userInfoResult.User.ID.String(),
-			Login:     userInfoResult.User.Login,
-			AuthToken: userInfoResult.User.AuthToken.String(),
-			Name:      userInfoResult.User.FirstName,
-			ImageID:   userInfoResult.User.UserImage.String(),
-			Role:      userInfoResult.Role,
-			Address:   userInfoResult.Address,
-		},
-	)
+	c.JSON(http.StatusOK, utils.MapFromRepoInfoResultToInfoResponse(userInfoResult))
 }

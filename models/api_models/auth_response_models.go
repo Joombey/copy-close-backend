@@ -13,11 +13,11 @@ type RegisterResponse struct {
 }
 
 type UserInfoResponse struct {
-	UserID    string            `json:"user_id"`
+	UserID    string            `json:"user_id,omitempty"`
 	Login     string            `json:"login"`
-	AuthToken string            `json:"auth_token"`
+	AuthToken string            `json:"auth_token,omitempty"`
 	Name      string            `json:"name"`
 	ImageID   string            `json:"user_image"`
-	Role      db_models.Role    `json:"role"`
-	Address   db_models.Address `json:"address"`
+	Role      *db_models.Role    `json:"role,omitempty"`
+	Address   *db_models.Address `json:"address"`
 }

@@ -32,7 +32,7 @@ func registerHandler(c *gin.Context) {
 	if err := fromString(form.Value["register"][0], &request); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
-	} 
+	}
 
 	result, err := userRepo.RegisterUser(request)
 	if errors.Is(err, errs.ErrUserExists) {

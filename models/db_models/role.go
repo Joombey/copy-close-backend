@@ -6,5 +6,5 @@ type Role struct {
 	CanBan  *bool `gorm:"default:false" json:"can_ban"`
 	CanBuy  *bool `gorm:"default:true" json:"can_buy"`
 	// for utility puprpose 
-	Users []User
+	Users []User `json:"-"`
 }

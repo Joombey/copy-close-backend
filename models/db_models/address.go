@@ -11,7 +11,7 @@ type Address struct {
 	Lat         float32 `json:"lat"`
 	Lon         float32 `json:"lon"`
 
-	Users []User
+	Users []User `json:"-"`
 }
 
 func (u *Address) BeforeCreate(tx *gorm.DB) (err error) {

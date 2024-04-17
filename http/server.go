@@ -15,6 +15,7 @@ func Init() {
 	handlers.GroupAuthRequests(router.Group("/auth"))
 	handlers.GroupFileRequests(router.Group("/file"))
 	handlers.GroupInfoHandlers(router.Group("/info"))
+	handlers.GroupMapHandlers(router.Group("/map"))
 	
 	router.GET("/clear", func(ctx *gin.Context) {
 		repo.ClearAll()

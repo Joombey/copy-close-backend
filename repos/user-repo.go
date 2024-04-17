@@ -1,6 +1,8 @@
 package repos
 
 import (
+	"fmt"
+
 	api "dev.farukh/copy-close/models/api_models"
 	core "dev.farukh/copy-close/models/core_models"
 	dbModels "dev.farukh/copy-close/models/db_models"
@@ -11,28 +13,11 @@ import (
 	"gorm.io/gorm"
 )
 
-var userRole = dbModels.Role{
-	CanSell: boolPtr(false),
-	CanBan:  boolPtr(false),
-	CanBuy:  boolPtr(true),
-}
-
-var sellerRole = dbModels.Role{
-	CanSell: boolPtr(true),
-	CanBan:  boolPtr(false),
-	CanBuy:  boolPtr(true),
-}
-
-var adminRole = dbModels.Role{
-	CanSell: boolPtr(false),
-	CanBan:  boolPtr(true),
-	CanBuy:  boolPtr(false),
-}
-
 type UserRepo interface {
 	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
 	LogInUser(api.LogInRequest) (uuid.UUID, error)
 	GetUser(login, authToken string) (repoModels.UserInfoResult, error)
+	GetSellers() []repoModels.UserInfoResult
 }
 
 type UserRepoImpl struct {
@@ -101,6 +86,24 @@ func (repo UserRepoImpl) GetUser(login, authToken string) (repoModels.UserInfoRe
     }, nil
 }
 
+func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
+	var sellers []dbModels.User
+	repo.db.Model(
+		&dbModels.User{},
+	).Preload(
+		"Users",
+	).Where(
+		fmt.Sprintf("role_id = %d", sellerRole.ID),
+	).Find(&sellers)
+	
+	var infos []repoModels.UserInfoResult
+	for _, seller := range sellers  {
+		repoModel, _ := repo.GetUser(seller.Login, seller.AuthToken.String())
+		infos = append(infos, repoModel)
+	}
+	return infos
+}
+
 func (repo UserRepoImpl) userExists(login, password string) bool {
 	var exists bool
 	repo.db.Raw(
@@ -112,7 +115,7 @@ func (repo UserRepoImpl) userExists(login, password string) bool {
 }
 
 func (repo UserRepoImpl) getRole(isSeller *bool) dbModels.Role {
-	if isSeller == boolPtr(true) {
+	if *isSeller {
 		return sellerRole
 	} else {
 		return userRole
@@ -201,4 +204,22 @@ func createIfNotExists(db *gorm.DB, role *dbModels.Role) {
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+var userRole = dbModels.Role{
+	CanSell: boolPtr(false),
+	CanBan:  boolPtr(false),
+	CanBuy:  boolPtr(true),
+}
+
+var sellerRole = dbModels.Role{
+	CanSell: boolPtr(true),
+	CanBan:  boolPtr(false),
+	CanBuy:  boolPtr(true),
+}
+
+var adminRole = dbModels.Role{
+	CanSell: boolPtr(false),
+	CanBan:  boolPtr(true),
+	CanBuy:  boolPtr(false),
 }
