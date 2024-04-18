@@ -14,7 +14,7 @@ type RegisterResponse struct {
 
 type UserInfoResponse struct {
 	UserID    string            `json:"user_id,omitempty"`
-	Login     string            `json:"login"`
+	Login     string            `json:"login,omitempty"`
 	AuthToken string            `json:"auth_token,omitempty"`
 	Name      string            `json:"name"`
 	ImageID   string            `json:"user_image"`

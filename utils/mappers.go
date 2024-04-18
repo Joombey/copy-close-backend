@@ -8,7 +8,6 @@ import (
 func MapFromRepoInfoResultToInfoResponse(userInfoResult repo_models.UserInfoResult) api_models.UserInfoResponse {
 	return api_models.UserInfoResponse{
 		UserID:    userInfoResult.User.ID.String(),
-		Login:     userInfoResult.User.Login,
 		AuthToken: userInfoResult.User.AuthToken.String(),
 		Name:      userInfoResult.User.FirstName,
 		ImageID:   userInfoResult.User.UserImage.String(),
@@ -27,11 +26,11 @@ func MapFromListRepoInfoResultToListInfoResponse(userInfoResult []repo_models.Us
 
 func MapFromRepoInfoResultToInfoResponseSafe(userInfoResult repo_models.UserInfoResult) api_models.UserInfoResponse {
 	return api_models.UserInfoResponse{
-		UserID:    userInfoResult.User.ID.String(),
-		Login:     userInfoResult.User.Login,
-		Name:      userInfoResult.User.FirstName,
-		ImageID:   userInfoResult.User.UserImage.String(),
-		Address:   &userInfoResult.Address,
+		UserID:  userInfoResult.User.ID.String(),
+		Name:    userInfoResult.User.FirstName,
+		ImageID: userInfoResult.User.UserImage.String(),
+		Role:    &userInfoResult.Role,
+		Address: &userInfoResult.Address,
 	}
 }
 

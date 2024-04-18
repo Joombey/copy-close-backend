@@ -12,6 +12,18 @@ func GroupMapHandlers(rg *gin.RouterGroup) {
 }
 
 func getSellersHandler(c *gin.Context) {
+	userID := c.Query("userID")
+	authToken := c.Query("authToken")
+	if userID == "" || authToken == "" {
+		c.String(http.StatusBadRequest, "No userID nor auth token has been specified")
+		return
+	}
+
+	if valid := userRepo.CheckTokenValid(userID, authToken); valid {
+		c.String(http.StatusUnauthorized, "invalid userID or auth token")
+		return
+	}
+	
 	sellers := utils.MapFromListRepoInfoResultToListInfoResponseSafe(userRepo.GetSellers())
 	c.JSON(http.StatusOK, sellers)
 }

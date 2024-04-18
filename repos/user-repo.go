@@ -18,6 +18,7 @@ type UserRepo interface {
 	LogInUser(api.LogInRequest) (uuid.UUID, error)
 	GetUser(login, authToken string) (repoModels.UserInfoResult, error)
 	GetSellers() []repoModels.UserInfoResult
+	CheckTokenValid(userID, authToken string) bool
 }
 
 type UserRepoImpl struct {
@@ -102,6 +103,22 @@ func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
 		infos = append(infos, repoModel)
 	}
 	return infos
+}
+
+func (repo UserRepoImpl) CheckTokenValid(userID, authToken string) bool {
+	tokenUUID, err := uuid.FromString(authToken)
+	if err!= nil {
+        return false
+    }
+
+	var exists bool
+	repo.db.Raw(
+		"SELECT EXISTS (SELECT * FROM users WHERE user_id = ? AND auth_token = ?)",
+		userID,
+		tokenUUID,
+	).Scan(&exists)
+	
+	return exists
 }
 
 func (repo UserRepoImpl) userExists(login, password string) bool {
