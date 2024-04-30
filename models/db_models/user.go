@@ -21,3 +21,15 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	u.ID = uuid.NewV4()
 	return nil
 }
+
+type Service struct {
+	CopyCloseBase
+	Title  string     `json:"title"`
+	Price  uint       `json:"price"`
+	UserID *uuid.UUID `gorm:"type:uuid" json:"-"`
+}
+
+func (u *Service) BeforeCreate(tx *gorm.DB) (err error) {
+	u.ID = uuid.NewV4()
+	return nil
+}

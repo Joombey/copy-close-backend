@@ -11,7 +11,8 @@ type RegisterResult struct {
 }
 
 type UserInfoResult struct {
-	User    dbModels.User
-	Role    dbModels.Role
-	Address dbModels.Address
+	User     dbModels.User
+	Role     dbModels.Role
+	Address  dbModels.Address
+	Services []dbModels.Service
 }

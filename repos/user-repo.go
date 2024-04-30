@@ -16,9 +16,10 @@ import (
 type UserRepo interface {
 	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
 	LogInUser(api.LogInRequest) (uuid.UUID, error)
-	GetUser(login, authToken, id string) (repoModels.UserInfoResult, error)
+	GetUser(string, string, string) (repoModels.UserInfoResult, error)
 	GetSellers() []repoModels.UserInfoResult
-	CheckTokenValid(userID, authToken string) bool
+	EditProfile(api.EditProfileRequest, string) error
+	CheckTokenValid(string, string) bool
 }
 
 type UserRepoImpl struct {
@@ -68,22 +69,25 @@ func (repo UserRepoImpl) GetUser(login, authToken, id string) (repoModels.UserIn
 	var err error
 	if !isUUID {
 		if id == "" {
-			err = repo.db.Where("id = ? AND auth_token = ?", login, authToken).First(&user).Error	
+			err = repo.db.Where("id = ? AND auth_token = ?", login, authToken).First(&user).Error
 		} else {
-			err = repo.db.Where("id = ?", login).First(&user).Error	
+			err = repo.db.Where("id = ?", login).First(&user).Error
 		}
-		
+
 	} else {
 		if id == "" {
 			err = repo.db.Where("login = ? AND auth_token = ?", login, authToken).First(&user).Error
 		} else {
 			err = repo.db.Where("login = ?", login).First(&user).Error
 		}
-		
 	}
+
 	if err != nil {
 		return repoModels.UserInfoResult{}, err
 	}
+
+	var services []dbModels.Service
+	repo.db.Where("user_id = ?", user.ID).Find(&services)
 
 	var role dbModels.Role
 	err = repo.db.Where("id = ?", user.RoleID).First(&role).Error
@@ -97,10 +101,11 @@ func (repo UserRepoImpl) GetUser(login, authToken, id string) (repoModels.UserIn
 		return repoModels.UserInfoResult{}, err
 	}
 	return repoModels.UserInfoResult{
-        User:    user,
-        Role:    role,
-        Address: address,
-    }, nil
+		User:     user,
+		Role:     role,
+		Address:  address,
+		Services: services,
+	}, nil
 }
 
 func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
@@ -112,9 +117,9 @@ func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
 	).Where(
 		fmt.Sprintf("role_id = %d", sellerRole.ID),
 	).Find(&sellers)
-	
+
 	var infos []repoModels.UserInfoResult
-	for _, seller := range sellers  {
+	for _, seller := range sellers {
 		repoModel, _ := repo.GetUser(seller.Login, seller.AuthToken.String(), seller.ID.String())
 		infos = append(infos, repoModel)
 	}
@@ -123,9 +128,9 @@ func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
 
 func (repo UserRepoImpl) CheckTokenValid(userID, authToken string) bool {
 	tokenUUID, err := uuid.FromString(authToken)
-	if err!= nil {
-        return false
-    }
+	if err != nil {
+		return false
+	}
 
 	var exists bool
 	repo.db.Raw(
@@ -133,7 +138,60 @@ func (repo UserRepoImpl) CheckTokenValid(userID, authToken string) bool {
 		userID,
 		tokenUUID,
 	).Scan(&exists)
-	
+
+	return exists
+}
+
+func (repo UserRepoImpl) EditProfile(editProfileRequest api.EditProfileRequest, imageID string) error {
+	var user dbModels.User
+	repo.db.Where("id = ?", editProfileRequest.UserID).First(&user)
+
+	if user.AuthToken.String() != editProfileRequest.AuthToken {
+		return errs.ErrInvalidLoginOrAuthToken
+	}
+
+	user.FirstName = editProfileRequest.Name
+	if imageID != "" {
+		user.UserImage = uuid.FromStringOrNil(imageID)
+	}
+
+	repo.db.UpdateColumns(user)
+
+	if user.RoleID != sellerRole.ID {
+		return nil
+	}
+
+	for _, service := range editProfileRequest.Services {
+		if repo.serviceExists(service) {
+			var actucalService dbModels.Service
+			repo.db.Where("id = ?", service.ID).First(&actucalService)
+			actucalService.Title = service.Title
+			actucalService.Price = service.Price
+
+			repo.db.UpdateColumns(actucalService)
+		} else {
+			newService := dbModels.Service{
+				UserID: &user.ID,
+				Title:  service.Title,
+				Price:  service.Price,
+			}
+			repo.db.Create(&newService)
+		}
+	}
+	return nil
+}
+
+func (repo UserRepoImpl) serviceExists(service dbModels.Service) bool {
+	if service.ID == uuid.Nil {
+		return false
+	}
+
+	var exists bool
+	repo.db.Raw(
+		"SELECT EXISTS (SELECT * FROM services WHERE id = ?)",
+		service.ID,
+	).Scan(&exists)
+
 	return exists
 }
 
@@ -142,16 +200,6 @@ func (repo UserRepoImpl) userExists(login, password string) bool {
 	repo.db.Raw(
 		"SELECT EXISTS(SELECT * FROM users WHERE login = ? and password = ?)",
 		login,
-		password,
-	).Scan(&exists)
-	return exists
-}
-
-func (repo UserRepoImpl) userExistsById(id uuid.UUID, password string) bool {
-	var exists bool
-	repo.db.Raw(
-		"SELECT EXISTS(SELECT * FROM users WHERE id = ? and password = ?)",
-		id,
 		password,
 	).Scan(&exists)
 	return exists
@@ -232,6 +280,7 @@ func setupDb(db *gorm.DB) error {
 		&dbModels.Role{},
 		&dbModels.Address{},
 		&dbModels.User{},
+		&dbModels.Service{},
 	)
 }
 

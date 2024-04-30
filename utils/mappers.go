@@ -13,6 +13,7 @@ func MapFromRepoInfoResultToInfoResponse(userInfoResult repo_models.UserInfoResu
 		ImageID:   userInfoResult.User.UserImage.String(),
 		Role:      &userInfoResult.Role,
 		Address:   &userInfoResult.Address,
+		Services:  userInfoResult.Services,
 	}
 }
 
