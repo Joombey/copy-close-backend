@@ -17,7 +17,7 @@ func GroupInfoHandlers(rg *gin.RouterGroup) {
 func getUserInfoHandler(c *gin.Context) {
 	login := c.Param("login")
 	if login == "" {
-		c.String(http.StatusBadRequest, "user login must be specified")
+		c.String(http.StatusBadRequest, "user login/id must be specified")
 		return
 	}
 
@@ -27,12 +27,14 @@ func getUserInfoHandler(c *gin.Context) {
 		return
 	}
 
-	userInfoResult, err := userRepo.GetUser(login, authToken)
+	userInfoResult, err := userRepo.GetUser(login, authToken, c.Query("userID"))
+	println(c.Query("userID"))
 	if errors.Is(err, errs.ErrInvalidLoginOrAuthToken) {
 		c.JSON(http.StatusUnauthorized, err.Error())
 		return
 	} else if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
+		println(err.Error())
 		return
 	}
 

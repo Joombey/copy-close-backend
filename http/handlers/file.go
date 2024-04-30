@@ -15,6 +15,5 @@ func GroupFileRequests(rg *gin.RouterGroup) {
 func getFileHandler(c *gin.Context) {
 	path, _ := os.Getwd()
 	path = fmt.Sprintf("%s/files/%s.jpeg", path, c.Param("imageID"))
-	println("blabla")
 	c.File(path)
 }

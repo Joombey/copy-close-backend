@@ -16,7 +16,7 @@ import (
 type UserRepo interface {
 	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
 	LogInUser(api.LogInRequest) (uuid.UUID, error)
-	GetUser(login, authToken string) (repoModels.UserInfoResult, error)
+	GetUser(login, authToken, id string) (repoModels.UserInfoResult, error)
 	GetSellers() []repoModels.UserInfoResult
 	CheckTokenValid(userID, authToken string) bool
 }
@@ -57,14 +57,30 @@ func (repo UserRepoImpl) LogInUser(signIn api.LogInRequest) (authToken uuid.UUID
 	return user.AuthToken, nil
 }
 
-func (repo UserRepoImpl) GetUser(login, authToken string) (repoModels.UserInfoResult, error) {
-	authTokenUUID, err := uuid.FromString(authToken)
-	if err != nil {
-		return repoModels.UserInfoResult{}, err
+func (repo UserRepoImpl) GetUser(login, authToken, id string) (repoModels.UserInfoResult, error) {
+	if tokenValid := repo.CheckTokenValid(id, authToken); id != "" && !tokenValid {
+		return repoModels.UserInfoResult{}, errs.ErrInvalidLoginOrAuthToken
 	}
 
+	isUUID := uuid.FromStringOrNil(login) == uuid.Nil
+
 	var user dbModels.User
-	err = repo.db.Where("login = ? AND auth_token = ?", login, authTokenUUID).First(&user).Error
+	var err error
+	if !isUUID {
+		if id == "" {
+			err = repo.db.Where("id = ? AND auth_token = ?", login, authToken).First(&user).Error	
+		} else {
+			err = repo.db.Where("id = ?", login).First(&user).Error	
+		}
+		
+	} else {
+		if id == "" {
+			err = repo.db.Where("login = ? AND auth_token = ?", login, authToken).First(&user).Error
+		} else {
+			err = repo.db.Where("login = ?", login).First(&user).Error
+		}
+		
+	}
 	if err != nil {
 		return repoModels.UserInfoResult{}, err
 	}
@@ -99,7 +115,7 @@ func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
 	
 	var infos []repoModels.UserInfoResult
 	for _, seller := range sellers  {
-		repoModel, _ := repo.GetUser(seller.Login, seller.AuthToken.String())
+		repoModel, _ := repo.GetUser(seller.Login, seller.AuthToken.String(), seller.ID.String())
 		infos = append(infos, repoModel)
 	}
 	return infos
@@ -113,7 +129,7 @@ func (repo UserRepoImpl) CheckTokenValid(userID, authToken string) bool {
 
 	var exists bool
 	repo.db.Raw(
-		"SELECT EXISTS (SELECT * FROM users WHERE user_id = ? AND auth_token = ?)",
+		"SELECT EXISTS (SELECT * FROM users WHERE id = ? AND auth_token = ?)",
 		userID,
 		tokenUUID,
 	).Scan(&exists)
@@ -126,6 +142,16 @@ func (repo UserRepoImpl) userExists(login, password string) bool {
 	repo.db.Raw(
 		"SELECT EXISTS(SELECT * FROM users WHERE login = ? and password = ?)",
 		login,
+		password,
+	).Scan(&exists)
+	return exists
+}
+
+func (repo UserRepoImpl) userExistsById(id uuid.UUID, password string) bool {
+	var exists bool
+	repo.db.Raw(
+		"SELECT EXISTS(SELECT * FROM users WHERE id = ? and password = ?)",
+		id,
 		password,
 	).Scan(&exists)
 	return exists

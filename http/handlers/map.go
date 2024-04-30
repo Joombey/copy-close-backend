@@ -19,7 +19,7 @@ func getSellersHandler(c *gin.Context) {
 		return
 	}
 
-	if valid := userRepo.CheckTokenValid(userID, authToken); valid {
+	if valid := userRepo.CheckTokenValid(userID, authToken); !valid {
 		c.String(http.StatusUnauthorized, "invalid userID or auth token")
 		return
 	}
