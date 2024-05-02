@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	// "errors"
+	"dev.farukh/copy-close/models/errs"
+	"errors"
 	"net/http"
 
 	apimodels "dev.farukh/copy-close/models/api_models"
@@ -37,5 +38,13 @@ func editProfileHandler(c *gin.Context) {
 		go c.SaveUploadedFile(form.File["image"][0], fileDestination(fileName)) 
 	}
 
-	userRepo.EditProfile(profileRequest, fileName)
+	err = userRepo.EditProfile(profileRequest, fileName)
+	if errors.Is(err, errs.ErrInvalidLoginOrAuthToken) {
+		c.String(
+			http.StatusUnauthorized,
+			"dont have access to edit this profile with such token and id combination",
+		)
+	} else if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+	}
 }

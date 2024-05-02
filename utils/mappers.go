@@ -32,6 +32,7 @@ func MapFromRepoInfoResultToInfoResponseSafe(userInfoResult repo_models.UserInfo
 		ImageID: userInfoResult.User.UserImage.String(),
 		Role:    &userInfoResult.Role,
 		Address: &userInfoResult.Address,
+		Services: userInfoResult.Services,
 	}
 }
 

@@ -178,6 +178,12 @@ func (repo UserRepoImpl) EditProfile(editProfileRequest api.EditProfileRequest, 
 			repo.db.Create(&newService)
 		}
 	}
+	for _, serviceID := range editProfileRequest.ServicesToDelete {
+        repo.db.Raw(
+			"UPDATE services SET user_id = NULL WHERE id = ?",
+			uuid.FromStringOrNil(serviceID),
+		).Scan(nil)
+    }
 	return nil
 }
 
