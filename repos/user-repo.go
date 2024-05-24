@@ -282,11 +282,23 @@ func openConnection(dsn string) (*gorm.DB, error) {
 }
 
 func setupDb(db *gorm.DB) error {
-	return db.AutoMigrate(
+	err := db.Debug().SetupJoinTable(
+		&dbModels.Order{},
+		"Services",
+		&dbModels.OrderService{},
+	)
+	if err != nil {
+		return err
+	}
+	
+	return db.Debug().AutoMigrate(
 		&dbModels.Role{},
 		&dbModels.Address{},
 		&dbModels.User{},
 		&dbModels.Service{},
+		&dbModels.Document{},
+		&dbModels.Order{},
+		&dbModels.OrderService{},
 	)
 }
 

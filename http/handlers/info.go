@@ -28,7 +28,6 @@ func getUserInfoHandler(c *gin.Context) {
 	}
 
 	userInfoResult, err := userRepo.GetUser(login, authToken, c.Query("userID"))
-	println(c.Query("userID"))
 	if errors.Is(err, errs.ErrInvalidLoginOrAuthToken) {
 		c.JSON(http.StatusUnauthorized, err.Error())
 		return

@@ -12,11 +12,13 @@ var repo = di.GetComponent().UserRepo.(*repos.UserRepoImpl)
 
 func Init() {
 	router := gin.Default()
+	router.MaxMultipartMemory = 8 << 20
 	handlers.GroupAuthRequests(router.Group("/auth"))
 	handlers.GroupFileRequests(router.Group("/file"))
 	handlers.GroupInfoHandlers(router.Group("/info"))
 	handlers.GroupMapHandlers(router.Group("/map"))
 	handlers.GroupProfileHandlers(router.Group("/profile"))
+	handlers.GroupOrderHandlers(router.Group("/order"))
 	
 	router.GET("/clear", func(ctx *gin.Context) {
 		repo.ClearAll()

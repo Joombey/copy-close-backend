@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
 	"dev.farukh/copy-close/http"
 )
 
@@ -24,7 +23,7 @@ func createFilesFolder() {
 			return
 		}
 
-		if err := os.Mkdir("files", filePermissionUnix); err != nil { 
+		if err := os.Mkdir("files", filePermissionUnix); err != nil {
 			panic(err.Error())
 		}
 	}

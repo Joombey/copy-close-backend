@@ -15,6 +15,8 @@ type User struct {
 	UserImage uuid.UUID `gorm:"type:uuid"`
 	AddressID uuid.UUID `gorm:"type:uuid"`
 	AuthToken uuid.UUID `gorm:"type:uuid"`
+
+	Orders []Order `json:"-"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
@@ -27,6 +29,8 @@ type Service struct {
 	Title  string     `json:"title"`
 	Price  uint       `json:"price"`
 	UserID *uuid.UUID `gorm:"type:uuid" json:"-"`
+
+	Orders []Order `gorm:"many2many:order_services;"`
 }
 
 func (u *Service) BeforeCreate(tx *gorm.DB) (err error) {

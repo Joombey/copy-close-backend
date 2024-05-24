@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"dev.farukh/copy-close/models/errs"
 	"errors"
 	"net/http"
+
+	"dev.farukh/copy-close/models/errs"
 
 	apimodels "dev.farukh/copy-close/models/api_models"
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,7 @@ func editProfileHandler(c *gin.Context) {
 	var profileRequest apimodels.EditProfileRequest
 	if err = fromString(form.Value["data"][0], &profileRequest); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
-        return
+		return
 	}
 
 	if valid := (userRepo.CheckTokenValid(profileRequest.UserID, profileRequest.AuthToken)); !valid {
@@ -35,7 +36,7 @@ func editProfileHandler(c *gin.Context) {
 	fileName := ""
 	if len(form.File["image"]) > 0 {
 		fileName = uuid.NewV4().String()
-		go c.SaveUploadedFile(form.File["image"][0], fileDestination(fileName)) 
+		go c.SaveUploadedFile(form.File["image"][0], getPathForJPEG(fileName))
 	}
 
 	err = userRepo.EditProfile(profileRequest, fileName)

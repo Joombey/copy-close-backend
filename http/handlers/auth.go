@@ -2,11 +2,7 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
-
-	"encoding/json"
 
 	"dev.farukh/copy-close/di"
 	api "dev.farukh/copy-close/models/api_models"
@@ -15,6 +11,8 @@ import (
 )
 
 var userRepo = di.GetComponent().UserRepo
+var fileRepo = di.GetComponent().FileRepo
+var orderRepo = di.GetComponent().OrderRepo
 
 func GroupAuthRequests(rg *gin.RouterGroup) {
 	rg.POST("/register", registerHandler)
@@ -40,7 +38,7 @@ func registerHandler(c *gin.Context) {
 	} else if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 	} else {
-		err = c.SaveUploadedFile(form.File["image"][0], fileDestination(result.UserImage))
+		err = c.SaveUploadedFile(form.File["image"][0], getPathForJPEG(result.UserImage))
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
@@ -60,17 +58,4 @@ func logInHandler(c *gin.Context) {
 	} else {
 		c.String(http.StatusOK, token.String())
 	}
-}
-
-func fromString(value string, receiver any) error {
-	err := json.Unmarshal([]byte(value), receiver)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func fileDestination(path string) string {
-	absolutePath, _ := os.Getwd()
-	return fmt.Sprintf("%s/files/%s.jpeg", absolutePath, path)
 }
