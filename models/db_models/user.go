@@ -16,7 +16,8 @@ type User struct {
 	AddressID uuid.UUID `gorm:"type:uuid"`
 	AuthToken uuid.UUID `gorm:"type:uuid"`
 
-	Orders []Order `json:"-"`
+	Orders   []Order   `json:"-"`
+	Services []Service `json:"-"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
@@ -26,9 +27,10 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 
 type Service struct {
 	CopyCloseBase
-	Title  string     `json:"title"`
-	Price  uint       `json:"price"`
-	UserID *uuid.UUID `gorm:"type:uuid" json:"-"`
+	Title   string     `json:"title"`
+	Price   uint       `json:"price"`
+	Deleted bool       `json:"-"`
+	UserID  *uuid.UUID `gorm:"type:uuid" json:"-"`
 
 	Orders []Order `gorm:"many2many:order_services;"`
 }

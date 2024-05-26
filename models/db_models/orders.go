@@ -8,10 +8,18 @@ import (
 type Order struct {
 	CopyCloseBase
 	UserID  uuid.UUID `gorm:"type:uuid"`
+	State   int       `gorm:"default:0"`
 	Comment *string
 
+	Douments []Document
 	Services []Service `gorm:"many2many:order_services;"`
 }
+
+var (
+	STATE_REQUESTED = 0
+	STATE_ACCEPTED  = 1
+	STATE_COMPLETED = 2
+)
 
 func (o *Order) BeforeCreate(tx *gorm.DB) (err error) {
 	o.ID = uuid.NewV4()

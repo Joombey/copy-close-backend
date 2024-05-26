@@ -1,8 +1,6 @@
 package repos
 
 import (
-	"fmt"
-
 	api "dev.farukh/copy-close/models/api_models"
 	core "dev.farukh/copy-close/models/core_models"
 	dbModels "dev.farukh/copy-close/models/db_models"
@@ -87,7 +85,7 @@ func (repo UserRepoImpl) GetUser(login, authToken, id string) (repoModels.UserIn
 	}
 
 	var services []dbModels.Service
-	repo.db.Where("user_id = ?", user.ID).Find(&services)
+	repo.db.Where("user_id = ? AND deleted = 0", user.ID).Find(&services)
 
 	var role dbModels.Role
 	err = repo.db.Where("id = ?", user.RoleID).First(&role).Error
@@ -115,7 +113,7 @@ func (repo UserRepoImpl) GetSellers() []repoModels.UserInfoResult {
 	).Preload(
 		"Users",
 	).Where(
-		fmt.Sprintf("role_id = %d", sellerRole.ID),
+		"role_id = ?", sellerRole.ID,
 	).Find(&sellers)
 
 	var infos []repoModels.UserInfoResult
@@ -179,11 +177,11 @@ func (repo UserRepoImpl) EditProfile(editProfileRequest api.EditProfileRequest, 
 		}
 	}
 	for _, serviceID := range editProfileRequest.ServicesToDelete {
-        repo.db.Raw(
-			"UPDATE services SET user_id = NULL WHERE id = ?",
+		repo.db.Raw(
+			"UPDATE services SET deleted = 1 WHERE id = ?",
 			uuid.FromStringOrNil(serviceID),
 		).Scan(nil)
-    }
+	}
 	return nil
 }
 
@@ -290,7 +288,7 @@ func setupDb(db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return db.Debug().AutoMigrate(
 		&dbModels.Role{},
 		&dbModels.Address{},
