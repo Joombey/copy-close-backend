@@ -15,6 +15,7 @@ type UserRepo interface {
 	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
 	LogInUser(api.LogInRequest) (uuid.UUID, error)
 	GetUser(string, string, string) (repoModels.UserInfoResult, error)
+	GetUserInternal(string) (repoModels.UserInfoResult, error)
 	GetSellers() []repoModels.UserInfoResult
 	EditProfile(api.EditProfileRequest, string) error
 	CheckTokenValid(string, string) bool
@@ -79,6 +80,36 @@ func (repo UserRepoImpl) GetUser(login, authToken, id string) (repoModels.UserIn
 			err = repo.db.Where("login = ?", login).First(&user).Error
 		}
 	}
+
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+
+	var services []dbModels.Service
+	repo.db.Where("user_id = ? AND deleted = 0", user.ID).Find(&services)
+
+	var role dbModels.Role
+	err = repo.db.Where("id = ?", user.RoleID).First(&role).Error
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+
+	var address dbModels.Address
+	err = repo.db.Where("id = ?", user.AddressID).First(&address).Error
+	if err != nil {
+		return repoModels.UserInfoResult{}, err
+	}
+	return repoModels.UserInfoResult{
+		User:     user,
+		Role:     role,
+		Address:  address,
+		Services: services,
+	}, nil
+}
+
+func (repo UserRepoImpl) GetUserInternal(userID string) (repoModels.UserInfoResult, error) {
+	var user dbModels.User
+	err := repo.db.Where("id = ?", uuid.FromStringOrNil(userID)).First(&user).Error
 
 	if err != nil {
 		return repoModels.UserInfoResult{}, err

@@ -18,7 +18,8 @@ type Order struct {
 var (
 	STATE_REQUESTED = 0
 	STATE_ACCEPTED  = 1
-	STATE_COMPLETED = 2
+	STATE_REJECTED  = 2
+	STATE_COMPLETED = 3
 )
 
 func (o *Order) BeforeCreate(tx *gorm.DB) (err error) {

@@ -18,6 +18,7 @@ func NewOrderRepo(dsn string) OrderRepo {
 type OrderRepo interface {
 	CreateOrder(request apimodels.OrderCreationRequests) error
 	GetOrderInfo(userID uuid.UUID) OrderList
+	UpdateOrderState(id uuid.UUID, newState int)
 }
 
 type OrderRepoImpl struct {
@@ -65,6 +66,10 @@ func (r *OrderRepoImpl) GetOrderInfo(userID uuid.UUID) OrderList {
 		MyOrders: r.getOrdersForUser(userID),
 		ToMe:     r.getOrdersForSeller(userID),
 	}
+}
+
+func (r *OrderRepoImpl) UpdateOrderState(id uuid.UUID, newState int) {
+	r.db.Model(&db_models.Order{}).Where("id = ?", id).UpdateColumn("state", newState)
 }
 
 func (r *OrderRepoImpl) getOrdersForSeller(userID uuid.UUID) []Orders {
@@ -149,6 +154,7 @@ func (r *OrderRepoImpl) getOrdersForUser(userID uuid.UUID) []Orders {
 				OrderID:     order.ID,
 				Comment:     *order.Comment,
 				SellerID:    *seller.UserID,
+				State:       order.State,
 				UserID:      userID,
 				Services:    orderServiceSlice,
 				Attachments: docsIds,
@@ -170,6 +176,7 @@ type Orders struct {
 	Comment     string         `json:"comment"`
 	SellerID    uuid.UUID      `json:"seller_id"`
 	UserID      uuid.UUID      `json:"user_id"`
+	State       int            `json:"state"`
 	Services    []OrderService `json:"services"`
 	Attachments []Attachment   `json:"attachments"`
 }
