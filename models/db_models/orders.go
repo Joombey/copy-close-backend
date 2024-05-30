@@ -12,6 +12,7 @@ type Order struct {
 	Comment *string
 
 	Douments []Document
+	Messages []Message
 	Services []Service `gorm:"many2many:order_services;"`
 }
 

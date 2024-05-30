@@ -328,6 +328,7 @@ func setupDb(db *gorm.DB) error {
 		&dbModels.Document{},
 		&dbModels.Order{},
 		&dbModels.OrderService{},
+		&dbModels.Message{},
 	)
 }
 

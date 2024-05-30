@@ -55,6 +55,7 @@ type FileRepo interface {
 	WriteToSession(sessionId uuid.UUID, chunk []byte) (uuid.UUID, error)
 	SessionExists(sessionID uuid.UUID) bool
 	GetDocument(documentID uuid.UUID, offset int64) (*os.File, error)
+	GetDocumentPath(documentID uuid.UUID) (string, string, error)
 }
 
 type FileRepoImpl struct {
@@ -150,6 +151,15 @@ func (repo *FileRepoImpl) GetDocument(documentID uuid.UUID, offset int64) (*os.F
 	}
 
 	return file, nil
+}
+
+func (repo *FileRepoImpl) GetDocumentPath(documentID uuid.UUID) (string, string, error) {
+	var document dbModels.Document
+	err := repo.db.Where("id = ?", documentID).Find(&document).Error
+	if err != nil {
+		return "", "", err
+	}
+	return document.Path, document.Name, nil
 }
 
 func (repo *FileRepoImpl) createDocument(meta *fileUploadMeta) (uuid.UUID, error) {

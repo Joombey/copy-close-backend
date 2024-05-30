@@ -9,6 +9,7 @@ type Component struct {
 	UserRepo  repos.UserRepo
 	FileRepo  repos.FileRepo
 	OrderRepo repos.OrderRepo
+	ChatRepo  repos.ChatRepo
 }
 
 var component *Component
@@ -24,6 +25,7 @@ func init() {
 		UserRepo:  repo,
 		FileRepo:  repos.NewFileRepo(dsn),
 		OrderRepo: repos.NewOrderRepo(dsn),
+		ChatRepo:  repos.NewChatRepo(dsn),
 	}
 }
 

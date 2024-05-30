@@ -16,6 +16,7 @@ type User struct {
 	AddressID uuid.UUID `gorm:"type:uuid"`
 	AuthToken uuid.UUID `gorm:"type:uuid"`
 
+	Messages []Message `json:"-"`
 	Orders   []Order   `json:"-"`
 	Services []Service `json:"-"`
 }

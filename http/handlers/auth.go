@@ -13,6 +13,7 @@ import (
 var userRepo = di.GetComponent().UserRepo
 var fileRepo = di.GetComponent().FileRepo
 var orderRepo = di.GetComponent().OrderRepo
+var chatRepo = di.GetComponent().ChatRepo
 
 func GroupAuthRequests(rg *gin.RouterGroup) {
 	rg.POST("/register", registerHandler)

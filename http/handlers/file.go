@@ -13,7 +13,22 @@ func GroupFileRequests(rg *gin.RouterGroup) {
 	rg.GET("/image/:imageID", getFileHandler)
 	rg.GET("/create-session", createSessionHandler)
 	rg.POST("/upload/:sessionID", uploadHandler)
-	rg.GET("/get-document/:documentID", getDocumentHandler)
+	// rg.GET("/document/:documentID", getDocumentHandler)
+	rg.GET("/document/:documentID", getDocHandler)
+}
+
+func getDocHandler(c *gin.Context) {
+	documentID := uuid.FromStringOrNil(c.Param("documentID"))
+	if documentID == uuid.Nil {
+		c.String(http.StatusBadRequest, "documentID is required")
+		return
+	}
+	path, name, err := fileRepo.GetDocumentPath(documentID)
+	if err != nil {
+		c.String(http.StatusNotFound, err.Error())
+		return
+	}
+	c.FileAttachment(path, name)
 }
 
 func getDocumentHandler(c *gin.Context) {
