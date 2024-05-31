@@ -13,7 +13,6 @@ func GroupFileRequests(rg *gin.RouterGroup) {
 	rg.GET("/image/:imageID", getFileHandler)
 	rg.GET("/create-session", createSessionHandler)
 	rg.POST("/upload/:sessionID", uploadHandler)
-	// rg.GET("/document/:documentID", getDocumentHandler)
 	rg.GET("/document/:documentID", getDocHandler)
 }
 
@@ -29,32 +28,6 @@ func getDocHandler(c *gin.Context) {
 		return
 	}
 	c.FileAttachment(path, name)
-}
-
-func getDocumentHandler(c *gin.Context) {
-	documentID := uuid.FromStringOrNil(c.Param("documentID"))
-	if documentID == uuid.Nil {
-		c.String(http.StatusBadRequest, "documentID is required")
-		return
-	}
-
-	offset, err := stringToInt64(c.GetHeader("Range"))
-	if err != nil {
-		c.String(http.StatusBadRequest, "Range header is required")
-		return
-	}
-
-	file, err := fileRepo.GetDocument(documentID, offset)
-	if err != nil {
-		c.String(http.StatusNotFound, err.Error())
-		return
-	}
-
-	c.Status(http.StatusOK)
-	chunkedFile(file, func(chunk []byte, breakFunc func()) {
-		c.Writer.Write(chunk)
-		c.Writer.Flush()
-	})
 }
 
 func createSessionHandler(c *gin.Context) {

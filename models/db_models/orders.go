@@ -11,6 +11,7 @@ type Order struct {
 	State   int       `gorm:"default:0"`
 	Comment *string
 
+	Reports  []Report
 	Douments []Document
 	Messages []Message
 	Services []Service `gorm:"many2many:order_services;"`
@@ -42,3 +43,21 @@ type OrderService struct {
 	Amount    uint      `gorm:"type:uint"`
 	Title     string    `gorm:"type:text"`
 }
+
+type Report struct {
+	CopyCloseBase
+	OrderID   uuid.UUID `gorm:"type:uuid"`
+	Solution int       `gorm:"default:0"`
+	Message   string    `gorm:"type:text"`
+}
+
+func (r *Report) BeforeCreate(tx *gorm.DB) (err error) {
+	r.ID = uuid.NewV4()
+	return nil
+}
+
+var (
+	REPORT_STATE_IDLE     = 1
+	REPORT_STATE_BLOCK    = 2
+	REPORT_STATE_REJECTED = 3
+)

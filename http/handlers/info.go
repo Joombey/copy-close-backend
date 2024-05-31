@@ -8,7 +8,6 @@ import (
 	"dev.farukh/copy-close/models/errs"
 	utils "dev.farukh/copy-close/utils"
 	"github.com/gin-gonic/gin"
-	uuid "github.com/satori/go.uuid"
 )
 
 func GroupInfoHandlers(rg *gin.RouterGroup) {
@@ -49,6 +48,6 @@ func getOrderInfoHandler(c *gin.Context) {
 		c.String(http.StatusUnauthorized, "not valid user id and token combination")
 		return
 	}
-
-	c.JSON(http.StatusOK, orderRepo.GetOrderInfo(uuid.FromStringOrNil(userID)))
+	user, _ := userRepo.GetUserInternal(userID)
+	c.JSON(http.StatusOK, orderRepo.GetOrderInfo(*user.Role.CanBan, user.User.ID))
 }

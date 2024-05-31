@@ -34,22 +34,22 @@ func chunkedReader(reader io.Reader, onChunk onChunk) {
 	}
 }
 
-func chunkedFile(file *os.File, onChunk onChunk) {
-	chunk := make([]byte, 8192)
-	eof := false
-	for !eof {
-		r, err := file.Read(chunk)
-		if err != nil && err != io.EOF {
-			return
-		} else if err == io.EOF {
-			eof = true
-		}
+// func chunkedFile(file *os.File, onChunk onChunk) {
+// 	chunk := make([]byte, 8192)
+// 	eof := false
+// 	for !eof {
+// 		r, err := file.Read(chunk)
+// 		if err != nil && err != io.EOF {
+// 			return
+// 		} else if err == io.EOF {
+// 			eof = true
+// 		}
 
-		onChunk(chunk[:r], func() {
-			eof = true
-		})
-	}
-}
+// 		onChunk(chunk[:r], func() {
+// 			eof = true
+// 		})
+// 	}
+// }
 
 func fromString(value string, receiver any) error {
 	err := json.Unmarshal([]byte(value), receiver)
@@ -89,41 +89,41 @@ type work = func()
 
 func (w *Worker) Stop() { w.quit <- 1 }
 
-func (p *WorkerPool) append(orderID string, worker *Worker) {
+func (p *WorkerPool) append(workId string, worker *Worker) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if len(p.workerMap[orderID]) == 0 {
-		p.workerMap[orderID] = make([]*Worker, 0)
+	if len(p.workerMap[workId]) == 0 {
+		p.workerMap[workId] = make([]*Worker, 0)
 	}
-	p.workerMap[orderID] = append(p.workerMap[orderID], worker)
+	p.workerMap[workId] = append(p.workerMap[workId], worker)
 }
 
-func (p *WorkerPool) removeWorker(orderID string, worker *Worker) {
+func (p *WorkerPool) removeWorker(workId string, worker *Worker) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if len(p.workerMap[orderID]) == 0 {
+	if len(p.workerMap[workId]) == 0 {
 		return
 	}
 
-	for i, v := range p.workerMap[orderID] {
+	for i, v := range p.workerMap[workId] {
 		if v == worker {
-			p.workerMap[orderID] = append(p.workerMap[orderID][:i], p.workerMap[orderID][i+1:]...)
+			p.workerMap[workId] = append(p.workerMap[workId][:i], p.workerMap[workId][i+1:]...)
 			return
 		}
 	}
 }
 
-func (p *WorkerPool) trigger(orderID string) {
+func (p *WorkerPool) trigger(workId string) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if len(p.workerMap[orderID]) == 0 {
+	if len(p.workerMap[workId]) == 0 {
 		return
 	}
 
-	for _, worker := range p.workerMap[orderID] {
+	for _, worker := range p.workerMap[workId] {
 		worker.trigger <- 1
 	}
 }

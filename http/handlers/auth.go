@@ -8,12 +8,20 @@ import (
 	api "dev.farukh/copy-close/models/api_models"
 	"dev.farukh/copy-close/models/errs"
 	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
 )
 
 var userRepo = di.GetComponent().UserRepo
 var fileRepo = di.GetComponent().FileRepo
 var orderRepo = di.GetComponent().OrderRepo
 var chatRepo = di.GetComponent().ChatRepo
+var adminRepo = di.GetComponent().AdminRepo
+
+var devToken = uuid.NewV4().String()
+
+func init() {
+	println(devToken)
+}
 
 func GroupAuthRequests(rg *gin.RouterGroup) {
 	rg.POST("/register", registerHandler)
@@ -33,7 +41,7 @@ func registerHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := userRepo.RegisterUser(request)
+	result, err := userRepo.RegisterUser(request, c.Query("devKey") == devToken)
 	if errors.Is(err, errs.ErrUserExists) {
 		c.JSON(http.StatusNotFound, err.Error())
 	} else if err != nil {

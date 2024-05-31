@@ -17,6 +17,29 @@ import (
 func GroupOrderHandlers(rg *gin.RouterGroup) {
 	rg.POST("/create", createOrderHandler)
 	rg.GET("/update", manageOrderHandler)
+	rg.POST("/report", reportHandler)
+}
+
+func reportHandler(c *gin.Context) {
+	var report Report
+	err := c.BindJSON(&report)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	valid := userRepo.CheckTokenValid(report.UserID.String(), report.AuthToken.String())
+	if !valid {
+		c.String(http.StatusForbidden, "invalid token")
+	}
+
+	orderRepo.Report(
+		report.OrderID,
+		report.UserID,
+		report.Message,
+	)
+
+	c.Status(http.StatusOK)
 }
 
 func createOrderHandler(c *gin.Context) {
@@ -47,7 +70,7 @@ func manageOrderHandler(c *gin.Context) {
 		return
 	}
 
-	if v  < 0 || v > 3 {
+	if v < 0 || v > 3 {
 		c.String(http.StatusBadRequest, "no such state")
 		return
 	}
@@ -56,4 +79,11 @@ func manageOrderHandler(c *gin.Context) {
 		uuid.FromStringOrNil(c.Query("order_id")),
 		int(v),
 	)
+}
+
+type Report struct {
+	OrderID   uuid.UUID `json:"order_id"`
+	Message   string    `json:"message"`
+	UserID    uuid.UUID `json:"user_id"`
+	AuthToken uuid.UUID `json:"auth_token"`
 }

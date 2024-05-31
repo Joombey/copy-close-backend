@@ -12,23 +12,30 @@ import (
 )
 
 type UserRepo interface {
-	RegisterUser(api.RegisterRequest) (repoModels.RegisterResult, error)
+	RegisterUser(api.RegisterRequest, bool) (repoModels.RegisterResult, error)
 	LogInUser(api.LogInRequest) (uuid.UUID, error)
 	GetUser(string, string, string) (repoModels.UserInfoResult, error)
 	GetUserInternal(string) (repoModels.UserInfoResult, error)
 	GetSellers() []repoModels.UserInfoResult
 	EditProfile(api.EditProfileRequest, string) error
 	CheckTokenValid(string, string) bool
+	DeleteUser(string)
 }
 
 type UserRepoImpl struct {
 	db *gorm.DB
 }
 
-func (repo UserRepoImpl) RegisterUser(registerData api.RegisterRequest) (repoModels.RegisterResult, error) {
+func (repo UserRepoImpl) RegisterUser(registerData api.RegisterRequest, admin bool) (repoModels.RegisterResult, error) {
 	if !repo.userExists(registerData.Login, registerData.Password) {
 		addressID := repo.createAddress(registerData.Address)
-		role := repo.getRole(registerData.IsSeller)
+
+		var role dbModels.Role
+		if admin {
+			role = adminRole
+		} else {
+			role = repo.getRole(registerData.IsSeller)
+		}
 
 		id, authToken, imageID, err := repo.createUser(registerData, role.ID, addressID)
 		if err != nil {
@@ -284,6 +291,13 @@ func (repo *UserRepoImpl) ClearAll() {
 	repo.db.Exec("DELETE FROM addresses")
 }
 
+func (repo *UserRepoImpl) DeleteUser(userId string) {
+	repo.db.Exec(
+		"DELETE FROM users WHERE user_id = ?",
+		uuid.FromStringOrNil(userId),
+	)
+}
+
 func New(dsn string) (*UserRepoImpl, error) {
 	db, err := openConnection(dsn)
 	if err != nil {
@@ -329,6 +343,7 @@ func setupDb(db *gorm.DB) error {
 		&dbModels.Order{},
 		&dbModels.OrderService{},
 		&dbModels.Message{},
+		&dbModels.Report{},
 	)
 }
 

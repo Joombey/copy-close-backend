@@ -17,8 +17,9 @@ func NewOrderRepo(dsn string) OrderRepo {
 
 type OrderRepo interface {
 	CreateOrder(request apimodels.OrderCreationRequests) error
-	GetOrderInfo(userID uuid.UUID) OrderList
+	GetOrderInfo(all bool, userID uuid.UUID) OrderList
 	UpdateOrderState(id uuid.UUID, newState int)
+	Report(orderID, userID uuid.UUID, message string)
 }
 
 type OrderRepoImpl struct {
@@ -61,10 +62,10 @@ func (r *OrderRepoImpl) CreateOrder(request apimodels.OrderCreationRequests) err
 	return nil
 }
 
-func (r *OrderRepoImpl) GetOrderInfo(userID uuid.UUID) OrderList {
+func (r *OrderRepoImpl) GetOrderInfo(all bool, userID uuid.UUID) OrderList {
 	return OrderList{
-		MyOrders: r.getOrdersForUser(userID),
-		ToMe:     r.getOrdersForSeller(userID),
+		MyOrders: r.getOrdersForUser(all, userID),
+		ToMe:     r.getOrdersForSeller(false, userID),
 	}
 }
 
@@ -72,10 +73,21 @@ func (r *OrderRepoImpl) UpdateOrderState(id uuid.UUID, newState int) {
 	r.db.Model(&db_models.Order{}).Where("id = ?", id).UpdateColumn("state", newState)
 }
 
-func (r *OrderRepoImpl) getOrdersForSeller(userID uuid.UUID) []Orders {
+func (r *OrderRepoImpl) Report(orderID, userID uuid.UUID, message string) {
+	r.db.Create(&db_models.Report{
+		OrderID: orderID,
+		Message: message,
+	})
+}
+
+func (r *OrderRepoImpl) getOrdersForSeller(all bool, userID uuid.UUID) []Orders {
 	toMe := make([]Orders, 0)
 	var user db_models.User
-	r.db.Model(&db_models.User{}).Where("id = ?", userID).Find(&user)
+	if all {
+		r.db.Model(&db_models.User{}).Find(&user)
+	} else {
+		r.db.Model(&db_models.User{}).Where("id = ?", userID).Find(&user)
+	}
 	if user.RoleID == sellerRole.ID {
 		var userServices []db_models.Service
 		r.db.Model(&db_models.Service{}).Where("user_id = ?", userID).Find(&userServices)
@@ -107,15 +119,20 @@ func (r *OrderRepoImpl) getOrdersForSeller(userID uuid.UUID) []Orders {
 			orderUserMap[v.UserID] = false
 		}
 		for userID := range orderUserMap {
-			toMe = append(toMe, r.getOrdersForUser(userID)...)
+			toMe = append(toMe, r.getOrdersForUser(all, userID)...)
 		}
 	}
 	return toMe
 }
 
-func (r *OrderRepoImpl) getOrdersForUser(userID uuid.UUID) []Orders {
+func (r *OrderRepoImpl) getOrdersForUser(all bool, userID uuid.UUID) []Orders {
 	var orders []db_models.Order
-	r.db.Where("user_id = ?", userID).Find(&orders)
+	if all {
+		r.db.Find(&orders)
+	} else {
+		r.db.Where("user_id = ?", userID).Find(&orders)
+	}
+	
 
 	result := make([]Orders, 0)
 	for _, order := range orders {
@@ -148,6 +165,12 @@ func (r *OrderRepoImpl) getOrdersForUser(userID uuid.UUID) []Orders {
 			Where("id = ?", orderServiceSlice[0].ID).
 			Find(&seller)
 
+		var reported bool
+		r.db.Raw(
+			"SELECT EXISTS(SELECT * FROM reports WHERE order_id = ?)",
+			order.ID,
+		).Scan(&reported)
+
 		result = append(
 			result,
 			Orders{
@@ -158,6 +181,7 @@ func (r *OrderRepoImpl) getOrdersForUser(userID uuid.UUID) []Orders {
 				UserID:      userID,
 				Services:    orderServiceSlice,
 				Attachments: docsIds,
+				Reported:    reported,
 			},
 		)
 	}
@@ -178,6 +202,7 @@ type Orders struct {
 	UserID      uuid.UUID      `json:"user_id"`
 	State       int            `json:"state"`
 	Services    []OrderService `json:"services"`
+	Reported    bool           `json:"reported"`
 	Attachments []Attachment   `json:"attachments"`
 }
 

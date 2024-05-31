@@ -15,6 +15,7 @@ type User struct {
 	UserImage uuid.UUID `gorm:"type:uuid"`
 	AddressID uuid.UUID `gorm:"type:uuid"`
 	AuthToken uuid.UUID `gorm:"type:uuid"`
+	Deleted   bool
 
 	Messages []Message `json:"-"`
 	Orders   []Order   `json:"-"`

@@ -23,6 +23,7 @@ func Init() {
 	handlers.GroupProfileHandlers(router.Group("/profile"))
 	handlers.GroupOrderHandlers(router.Group("/order"))
 	handlers.GroupChatHandlers(router.Group("/chat"))
+	handlers.GroupAdminHandlers(router.Group("/admin"))
 
 	router.GET("/clear", func(ctx *gin.Context) {
 		repo.ClearAll()
