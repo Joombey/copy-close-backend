@@ -9,6 +9,7 @@ import (
 	// utils "dev.farukh/copy-close/utils"
 	"net/http"
 
+	"dev.farukh/copy-close/http/websocket"
 	apimodels "dev.farukh/copy-close/models/api_models"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
@@ -18,6 +19,31 @@ func GroupOrderHandlers(rg *gin.RouterGroup) {
 	rg.POST("/create", createOrderHandler)
 	rg.GET("/update", manageOrderHandler)
 	rg.POST("/report", reportHandler)
+	rg.GET("/listen", listenHandler)
+}
+
+func listenHandler(c *gin.Context) {
+	conn := websocket.ToWebSocket(c)
+	worker := &Worker{
+		work: func() {
+			conn.WriteMessage(1, []byte("1"))
+		},
+		trigger: make(chan any),
+		quit:    make(chan any),
+	}
+	workerPool.append("2", worker)
+
+	for {
+		select {
+		case <-worker.quit:
+			close(worker.quit)
+			close(worker.trigger)
+			workerPool.removeWorker("2", worker)
+			return
+		case <-worker.trigger:
+			worker.work()
+		}
+	}
 }
 
 func reportHandler(c *gin.Context) {
@@ -40,6 +66,7 @@ func reportHandler(c *gin.Context) {
 	)
 
 	c.Status(http.StatusOK)
+	workerPool.trigger("2")
 }
 
 func createOrderHandler(c *gin.Context) {
@@ -79,6 +106,7 @@ func manageOrderHandler(c *gin.Context) {
 		uuid.FromStringOrNil(c.Query("order_id")),
 		int(v),
 	)
+	workerPool.trigger("2")
 }
 
 type Report struct {

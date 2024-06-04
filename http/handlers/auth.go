@@ -8,7 +8,6 @@ import (
 	api "dev.farukh/copy-close/models/api_models"
 	"dev.farukh/copy-close/models/errs"
 	"github.com/gin-gonic/gin"
-	uuid "github.com/satori/go.uuid"
 )
 
 var userRepo = di.GetComponent().UserRepo
@@ -17,7 +16,7 @@ var orderRepo = di.GetComponent().OrderRepo
 var chatRepo = di.GetComponent().ChatRepo
 var adminRepo = di.GetComponent().AdminRepo
 
-var devToken = uuid.NewV4().String()
+var devToken = "1"
 
 func init() {
 	println(devToken)
