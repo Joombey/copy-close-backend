@@ -1,13 +1,6 @@
 package handlers
 
-import (
-	// "net/http"
-
-	// "errors"
-
-	// "dev.farukh/copy-close/models/errs"
-	// utils "dev.farukh/copy-close/utils"
-	"net/http"
+import ("net/http"
 
 	"dev.farukh/copy-close/http/websocket"
 	apimodels "dev.farukh/copy-close/models/api_models"
@@ -78,6 +71,7 @@ func createOrderHandler(c *gin.Context) {
 	}
 
 	orderRepo.CreateOrder(request)
+	workerPool.trigger("2")
 }
 
 func manageOrderHandler(c *gin.Context) {
